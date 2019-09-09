@@ -1,0 +1,23 @@
+{
+  "dependencies": {
+    "request": "2.88.0"
+  },
+  "description": "A widget that shows your turf user list",
+  "hooks": [
+    { "hook": "filter:admin.header.build", "method": "filterAdminHeaderBuild" },
+    { "hook": "filter:widget.render:turf", "method": "filterWidgetRenderTurf" },
+    { "hook": "filter:widgets.getWidgets", "method": "filterWidgetsGetWidgets" },
+    { "hook": "static:app.load", "method": "staticAppLoad" }
+  ],
+  "id": "nodebb-widget-turf",
+  "library": "plugin.js",
+  "name": "NodeBB Turf widget",
+  "nbbpm": {
+    "compatibility": "^1.12.2"
+  },
+  "staticDirs": {
+    "static": "static"
+  },
+  "templates": "templates",
+  "url": "https://github.com/Jenkler/nodebb-widget-turf"
+}
