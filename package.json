@@ -1,7 +1,7 @@
 {
   "author": {
     "email": "info@jenkler.com",
-    "name": "Jenkler"
+    "name": "Jenkler IT AB"
   },
   "description": "A widget that shows your turf user list",
   "homepage": "https://github.com/Jenkler/nodebb-widget-turf",
@@ -10,6 +10,7 @@
     "turf",
     "widget"
   ],
+  "license" : "BSD-3-Clause",
   "main": "plugin.js",
   "name": "nodebb-widget-turf",
   "nbbpm": {
@@ -22,5 +23,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.12.2"
+  "version": "1.12.20001"
 }
