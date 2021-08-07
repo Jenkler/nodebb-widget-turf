@@ -1,7 +1,10 @@
 {
   "author": {
-    "email": "info@jenkler.com",
+    "email": "info@jenkler.se",
     "name": "Jenkler IT AB"
+  },
+  "dependencies": {
+    "got": "^11.8.2"
   },
   "description": "A widget that shows your turf user list",
   "homepage": "https://github.com/Jenkler/nodebb-widget-turf",
@@ -14,7 +17,7 @@
   "main": "plugin.js",
   "name": "nodebb-widget-turf",
   "nbbpm": {
-    "compatibility": "^1.12.2"
+    "compatibility": "^1.17.2"
   },
   "repository": {
     "type": "git",
@@ -23,5 +26,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "1.12.20001"
+  "version": "1.17.20001"
 }

@@ -1,7 +1,5 @@
 {
-  "dependencies": {
-    "request": "2.88.0"
-  },
+  "acpScripts": [ "admin.js" ],
   "description": "A widget that shows your turf user list",
   "hooks": [
     { "hook": "filter:admin.header.build", "method": "filterAdminHeaderBuild" },
@@ -11,9 +9,9 @@
   ],
   "id": "nodebb-widget-turf",
   "library": "plugin.js",
-  "name": "NodeBB Turf widget",
+  "name": "NodeBB Turf",
   "nbbpm": {
-    "compatibility": "^1.12.2"
+    "compatibility": "^1.17.2"
   },
   "staticDirs": {
     "static": "static"

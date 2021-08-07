@@ -1,5 +1,6 @@
 'use strict';
 
+const got = require('got');
 const meta = require.main.require('./src/meta');
 const ranks = {0: { b:'10', p:'0', t:'30' }, 1: { b:'10,3', p:'195', t:'29,8' }, 2: { b:'10,5', p:'420', t:'29,6' }, 3: { b:'10,8', p:'700', t:'29,4' },
 4: { b:'11', p:'1200', t:'29,2' }, 5: { b:'11,3', p:'1900', t:'29' }, 6: { b:'11,5', p:'3500', t:'28,8' }, 7: { b:'11,8', p:'5500', t:'28,6' },
@@ -17,84 +18,68 @@ const ranks = {0: { b:'10', p:'0', t:'30' }, 1: { b:'10,3', p:'195', t:'29,8' },
 52: { b:'23', p:'6500000', t:'19,6' }, 53: { b:'23,3', p:'7250000', t:'19,4' }, 54: { b:'23,5', p:'8000000', t:'19,2' }, 55: { b:'23,8', p:'9500000', t:'19' },
 56: { b:'24', p:'11000000', t:'18,8' }, 57: { b:'24,3', p:'13000000', t:'18,6' }, 58: { b:'24,5', p:'15000000', t:'18,4' },
 59: { b:'24,8', p:'25000000', t:'18,2' }, 60: { b:'25', p:'50000000', t:'18' }};
-const request = require('request');
-
 let nodebb = {};
-let turf = {};
-turf.updated = Math.round(new Date().getTime() / 1000);
+let turf = { updated: Math.round(new Date().getTime() / 1000) };
 
-async function updateUsers(force = false) {
+const numberSpace = async (data) => {
+  return data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+const renderAdmin = async (req, res) => {
+  res.render('admin/turf', {});
+}
+const updateUsers = async (force = false) => {
   turf.now = Math.round(new Date().getTime() / 1000);
   if(force || turf.now - turf.updated > 300) {
-    let config = meta.config['turf:users'].split(',');
+    let settings = await meta.settings.get('turf');
+    let config = (settings?.users ?? '').split(',').map((x) => { return x.trim().split(' ')[0]; });
+    if(config[0] == '') return false;
     let users = [];
-    for(let value of config) {
-      users.push({'name': value.trim()});  
+    for(let user of config) {
+      users.push({'name': user});
     }
-    request.post('http://api.turfgame.com/v4/users', {
-      json: users
-    }, (error, res, output) => {
-      if(error) {
-        console.error(error);
-        return false;
-      }
+    const item = await got.post('https://api.turfgame.com/v4/users', { json: users, responseType: 'json' });
+    if(item.statusCode == 200) {
       turf.data = [];
-      for(let value2 of output) {
-        let values = {          
-          BlockMinutes: ranks[value2.rank]['b'],
-          Name: value2.name,
-          NextRank: numberSpace(ranks[value2.rank + 1]['p'] - value2.totalPoints),
-          Points: numberSpace(value2.points),
-          PointsPerHour: numberSpace(value2.pointsPerHour),
-          PointsTotal: numberSpace(value2.totalPoints),
-          Rank: numberSpace(value2.rank),
-          TakenZones: numberSpace(value2.taken),
-          TakeoverSeconds: ranks[value2.rank]['t'],
-          UniqueZonesTaken: numberSpace(value2.uniqueZonesTaken),
-          Zones: numberSpace(value2.zones.length),
-          Country: value2.country,
-          Id: numberSpace(value2.id),
-          Medals: value2.medals.length,
-          Place: numberSpace(value2.place)
+      for(let value of item.body) {
+        let values = {
+          BlockMinutes: ranks[value.rank]['b'],
+          Name: value.name,
+          NextRank: await numberSpace(ranks[value.rank + 1]['p'] - value.totalPoints),
+          Points: await numberSpace(value.points),
+          PointsPerHour: await numberSpace(value.pointsPerHour),
+          PointsTotal: await numberSpace(value.totalPoints),
+          Rank: await numberSpace(value.rank),
+          TakenZones: await numberSpace(value.taken),
+          TakeoverSeconds: ranks[value.rank]['t'],
+          UniqueZonesTaken: await numberSpace(value.uniqueZonesTaken),
+          Zones: await numberSpace(value.zones.length),
+          Country: value.country,
+          Id: await numberSpace(value.id),
+          Medals: value.medals.length,
+          Place: await numberSpace(value.place)
         }
         turf.data.push(values);
       }
       turf.updated = Math.round(new Date().getTime() / 1000);
       return true;
-    })
-  }
-  else { return false }
-}
-
-function keyExists(data) {
-  let args = Array.prototype.slice.call(arguments, 1);
-  for(let arg of args) {
-    if(!data || !data.hasOwnProperty(arg)) {
-      return false;
     }
-    data = data[arg];
+    else return false;
   }
-  return true;
-}
-function numberSpace(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-function renderAdmin(req, res, next) {
-  res.render('admin/turf', {});
+  else return false;
 }
 
-exports.filterAdminHeaderBuild = function(header, callback) {
-  header.plugins.push({
-    route: '/turf',
+exports.filterAdminHeaderBuild = async (data) => {
+  data.plugins.push({
     icon: 'fa-link',
-    name: 'Turf'
+    name: 'Turf',
+    route: '/turf'
   });
-  callback(null, header);
+  return data;
 };
-exports.filterWidgetRenderTurf = function(data, callback) {
-  if(keyExists(meta.config, 'turf:users')) updateUsers();
+exports.filterWidgetRenderTurf = async (data) => {
+  await updateUsers();
   let tbody = '';
-  let thead = ''; 
+  let thead = '';
   for(let x = 0; x < turf.data.length; x++) {
     thead += '<div class="td">' + turf.data[x].Name + '</div>';
     if(x == 0) for(let key in turf.data[x]) {
@@ -108,26 +93,22 @@ exports.filterWidgetRenderTurf = function(data, callback) {
       }
     }
   }
-  nodebb.app.render('widgets/turf', { tbody: tbody, thead: thead }, function(err, html) {
-    data.html = html;
-    callback(err, data);
-  });
+  data.html = await nodebb.app.renderAsync('widgets/turf', { tbody: tbody, thead: thead });
+  return data;
 };
-exports.filterWidgetsGetWidgets = function(data, callback) {
-  data = data.concat([
-  {
-    widget: 'turf',
-    name: 'Turf',
+exports.filterWidgetsGetWidgets = async (data) => {
+  data.push({
     content: '',
-    description: 'A widget that shows your turf user list'
-  }]);
-  callback(null, data);
+    description: 'A widget that shows your turf user list',
+    name: 'Turf',
+    widget: 'turf'
+  });
+  return data;
 };
-exports.staticAppLoad = function(data, callback) {
+exports.staticAppLoad = async (data) => {
   console.log('Loading Jenkler Turf widget ' + require('./package.json').version);
   data.router.get('/admin/turf', data.middleware.admin.buildHeader, renderAdmin);
   data.router.get('/api/admin/turf', renderAdmin);
   nodebb.app = data.app;
-  if(keyExists(meta.config, 'turf:users')) updateUsers(true);
-  callback();
+  await updateUsers(true);
 };
